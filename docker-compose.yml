@@ -1,0 +1,51 @@
+services:
+
+  django-backend:
+    image: django-backend:dev
+    container_name: task-management-django
+    hostname: django
+    build:
+      context: ./django_backend
+    ports:
+      - "8000:8000"
+    enviroment:
+      SECRET_KEY: '${SECRET_KEY}'
+      DEBUG: '${DEBUG}'
+      DJANGO_ALLOWED_HOSTS: '${DJANGO_ALLOWED_HOSTS}'
+    networks:
+      - task-management-net
+    volumes:
+      - ./django-backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "https://localhost:8000/health/"]
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: task-management-postgres
+    hostname: postgres
+    environment:
+      POSTGRES_DB: '${POSTGRES_DB}'
+      POSTGRES_USER: '${POSTGRES_USER}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+    networks:
+      - task-management-net
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+
+    redis:
+      image: redis:8-alpine
+      container_name: task-management-redis
+      hostname: redis
+      networks:
+        - task-management-net
+
+
+volumes:
+  postgres-data:
+    name: task-management-db
+
+networks:
+  task-management-net:
+    name: task-management-net
